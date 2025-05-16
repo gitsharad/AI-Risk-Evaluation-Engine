@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger';
 import { getDefaultConfig } from '../models/RiskConfig';
 import FraudLog, { IFraudLog } from '../models/FraudLog';
+import { getLlmRiskAnalysis, LlmRequestData } from './llmService';
 
 // Define the transaction data structure
 export interface TransactionData {
@@ -8,6 +9,7 @@ export interface TransactionData {
   amount: number;
   ip: string;
   deviceFingerprint: string;
+  enableLlmAnalysis?: boolean;
 }
 
 // Define the risk evaluation result
@@ -15,6 +17,8 @@ export interface RiskEvaluationResult {
   score: number;
   riskLevel: 'low' | 'medium' | 'high';
   explanation: string[];
+  llmEnhanced?: boolean;
+  llmFlags?: string[];
 }
 
 // Stats interface
@@ -36,6 +40,8 @@ interface FraudLogData {
   score: number;
   riskLevel: 'low' | 'medium' | 'high';
   reason: string;
+  llmEnhanced?: boolean;
+  llmFlags?: string[];
 }
 
 // Cache for recent IPs and device fingerprints
@@ -123,6 +129,66 @@ export const evaluateRisk = async (
       riskLevel = 'low';
     }
 
+    let llmEnhanced = false;
+    let llmFlags: string[] = [];
+
+    // Use LLM for enhanced analysis if enabled
+    if (transaction.enableLlmAnalysis && process.env.OPENAI_API_KEY) {
+      try {
+        // Prepare data for LLM analysis
+        const llmData: LlmRequestData = {
+          email: transaction.email,
+          amount: transaction.amount,
+          ip: transaction.ip,
+          deviceFingerprint: transaction.deviceFingerprint,
+          currentRiskScore: score,
+          currentRiskLevel: riskLevel,
+          currentExplanations: reasons,
+        };
+
+        // Get LLM analysis
+        logger.info('Requesting LLM analysis for transaction', { email: transaction.email });
+        const llmResult = await getLlmRiskAnalysis(llmData);
+        
+        // Incorporate LLM analysis into the risk assessment
+        llmEnhanced = true;
+        
+        // Adjust score based on LLM input (weighted blend)
+        const ruleBasedWeight = 0.7; // 70% weight to rule-based system
+        const llmWeight = 0.3; // 30% weight to LLM
+        score = Math.min(100, Math.round(
+          (score * ruleBasedWeight) + (llmResult.riskScore * llmWeight)
+        ));
+        
+        // Re-determine risk level based on new score
+        if (score >= config.thresholds.high) {
+          riskLevel = 'high';
+        } else if (score >= config.thresholds.medium) {
+          riskLevel = 'medium';
+        } else {
+          riskLevel = 'low';
+        }
+        
+        // Add LLM-specific flags
+        llmFlags = llmResult.additionalFlags;
+        
+        // Add LLM explanations to our reasons
+        llmResult.explanation.forEach(explanation => {
+          if (!reasons.includes(explanation)) {
+            reasons.push(explanation);
+          }
+        });
+        
+        logger.info('LLM analysis completed', { 
+          originalScore: llmData.currentRiskScore,
+          llmScore: llmResult.riskScore,
+          finalScore: score
+        });
+      } catch (error) {
+        logger.error('Error during LLM analysis, continuing with rule-based assessment only:', error);
+      }
+    }
+
     // Log fraud attempts if risk is not low
     if (riskLevel !== 'low') {
       await logFraudAttempt({
@@ -133,6 +199,8 @@ export const evaluateRisk = async (
         score,
         riskLevel,
         reason: reasons.join('; '),
+        llmEnhanced,
+        llmFlags
       });
     }
 
@@ -146,6 +214,8 @@ export const evaluateRisk = async (
       score,
       riskLevel,
       explanation: reasons,
+      llmEnhanced,
+      llmFlags
     };
   } catch (error) {
     logger.error('Error evaluating risk:', error);

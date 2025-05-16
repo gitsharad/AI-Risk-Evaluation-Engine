@@ -9,6 +9,8 @@ export interface IFraudLog extends Document {
   riskLevel: 'low' | 'medium' | 'high';
   reason: string;
   createdAt: Date;
+  llmEnhanced?: boolean;
+  llmFlags?: string[];
 }
 
 const FraudLogSchema: Schema = new Schema(
@@ -50,6 +52,14 @@ const FraudLogSchema: Schema = new Schema(
       type: Date,
       default: Date.now,
     },
+    llmEnhanced: {
+      type: Boolean,
+      default: false,
+    },
+    llmFlags: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,
@@ -61,5 +71,6 @@ FraudLogSchema.index({ riskLevel: 1 });
 FraudLogSchema.index({ ip: 1 });
 FraudLogSchema.index({ deviceFingerprint: 1 });
 FraudLogSchema.index({ email: 1 });
+FraudLogSchema.index({ llmEnhanced: 1 });
 
 export default mongoose.model<IFraudLog>('FraudLog', FraudLogSchema); 

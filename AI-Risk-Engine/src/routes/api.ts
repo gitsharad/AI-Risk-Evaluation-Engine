@@ -26,7 +26,7 @@ router.post(
   '/evaluate-risk', 
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { email, amount, ip, deviceFingerprint }: TransactionData = req.body;
+      const { email, amount, ip, deviceFingerprint, enableLlmAnalysis }: TransactionData = req.body;
 
       // Validate required fields
       if (!email || !amount || !ip || !deviceFingerprint) {
@@ -62,6 +62,7 @@ router.post(
         amount,
         ip: clientIp,
         deviceFingerprint,
+        enableLlmAnalysis: !!enableLlmAnalysis,
       });
 
       // Return the risk evaluation result

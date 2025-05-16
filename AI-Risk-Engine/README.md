@@ -5,6 +5,7 @@ A Node.js backend system for evaluating payment transaction risks based on vario
 ## Features
 
 - **Risk Evaluation**: Analyzes transactions based on email domain, amount, IP address, and device fingerprint
+- **LLM Integration**: Enhanced risk analysis powered by OpenAI's language models
 - **Fraud Logging**: Saves suspicious transactions to MongoDB
 - **Statistics API**: Get aggregate fraud data by risk level
 - **Configuration Management**: Dynamic updates of risk thresholds and flagged entities
@@ -16,6 +17,7 @@ A Node.js backend system for evaluating payment transaction risks based on vario
 - Node.js + TypeScript
 - Express.js
 - MongoDB with Mongoose
+- OpenAI API for LLM integration
 - Jest for testing
 - Docker and docker-compose
 
@@ -33,7 +35,8 @@ Request Body:
   "email": "user@example.com",
   "amount": 5000,
   "ip": "192.168.1.1",
-  "deviceFingerprint": "d3v1c3-1d-h3r3"
+  "deviceFingerprint": "d3v1c3-1d-h3r3",
+  "enableLlmAnalysis": true
 }
 ```
 
@@ -44,7 +47,9 @@ Response:
   "data": {
     "score": 35,
     "riskLevel": "medium",
-    "explanation": ["Transaction amount ₹5000 exceeds threshold"]
+    "explanation": ["Transaction amount ₹5000 exceeds threshold"],
+    "llmEnhanced": true,
+    "llmFlags": ["Unusual transaction pattern for this account"]
   }
 }
 ```
@@ -116,6 +121,7 @@ Request Body:
 - npm or yarn
 - MongoDB (if not using Docker)
 - Docker and docker-compose (for containerized setup)
+- OpenAI API key (for LLM integration)
 
 ### Local Development
 
@@ -132,10 +138,10 @@ Request Body:
 
 3. Create a `.env` file based on the example
    ```
-   cp .env.example .env
+   cp sample.env .env
    ```
 
-4. Update environment variables in `.env` as needed
+4. Update environment variables in `.env` as needed, especially the `OPENAI_API_KEY` for LLM integration
 
 5. Start the development server
    ```
@@ -152,6 +158,21 @@ Request Body:
 2. The API will be available at `http://localhost:6000`
 
 3. MongoDB will be available at `mongodb://localhost:27017`
+
+## Using the LLM Integration
+
+To enable LLM-enhanced risk analysis:
+
+1. Make sure you have set your `OPENAI_API_KEY` in the `.env` file
+2. Set `enableLlmAnalysis: true` in your API request
+
+The LLM will:
+- Process the same transaction data used in rule-based analysis
+- Provide additional risk insights not covered by rules
+- Contribute to the final risk score through a weighted blend
+- Add unique risk flags and explanations to the response
+
+This provides more nuanced fraud detection, especially for complex or novel fraud patterns.
 
 ## Testing
 
