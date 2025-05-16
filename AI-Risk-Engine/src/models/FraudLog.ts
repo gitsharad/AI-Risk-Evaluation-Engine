@@ -6,7 +6,7 @@ export interface IFraudLog extends Document {
   ip: string;
   deviceFingerprint: string;
   score: number;
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: 'low' | 'moderate' | 'high';
   reason: string;
   createdAt: Date;
   llmEnhanced?: boolean;
@@ -42,7 +42,7 @@ const FraudLogSchema: Schema = new Schema(
     riskLevel: {
       type: String,
       required: true,
-      enum: ['low', 'medium', 'high'],
+      enum: ['low', 'moderate', 'high'],
     },
     reason: {
       type: String,

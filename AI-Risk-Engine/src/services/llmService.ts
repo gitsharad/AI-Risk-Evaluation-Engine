@@ -8,7 +8,7 @@ dotenv.config();
 // Define the interface for LLM response
 export interface LlmAnalysisResult {
   riskAssessment: string;
-  riskScore: number;
+  riskScore: number; // 0.0-1.0 scale
   explanation: string[];
   additionalFlags: string[];
 }
@@ -19,7 +19,7 @@ export interface LlmRequestData {
   amount: number;
   ip: string;
   deviceFingerprint: string;
-  currentRiskScore: number;
+  currentRiskScore: number; // 0.0-1.0 scale
   currentRiskLevel: string;
   currentExplanations: string[];
 }
@@ -29,59 +29,98 @@ export interface LlmRequestData {
  */
 export const getLlmRiskAnalysis = async (data: LlmRequestData): Promise<LlmAnalysisResult> => {
   try {
+    // Debug: Log the environment variables
+    console.log('DEBUG: Environment variables loaded:', {
+      hasOpenAIKey: process.env.OPENAI_API_KEY ? 'Yes (length: ' + process.env.OPENAI_API_KEY.length + ')' : 'No',
+      nodeEnv: process.env.NODE_ENV,
+      port: process.env.PORT
+    });
+    
     const apiKey = process.env.OPENAI_API_KEY;
     
     if (!apiKey) {
+      console.error('DEBUG: OpenAI API key not found in environment variables');
       logger.error('OpenAI API key not found in environment variables');
       throw new Error('OpenAI API key not configured');
     }
 
+    // Debug: Log that we're about to create the prompt
+    console.log('DEBUG: Creating prompt for OpenAI');
+    
     // Construct prompt for the LLM
     const prompt = constructRiskAnalysisPrompt(data);
     
-    // Call OpenAI API
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-4', // or gpt-3.5-turbo for lower cost
-        messages: [
-          {
-            role: 'system', 
-            content: 'You are a fraud detection AI assistant. Analyze transaction data and determine risk levels. Format your response as JSON.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.3, // Lower temperature for more focused and deterministic outputs
-        response_format: { type: 'json_object' }
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        }
-      }
-    );
-
-    // Parse the response
-    const responseContent = response.data.choices[0].message.content;
-    const parsedResponse = JSON.parse(responseContent);
+    // Debug: Log request details (without sensitive data)
+    console.log('DEBUG: About to make OpenAI API request with model: gpt-3.5-turbo');
     
-    // Validate and format the response
-    return {
-      riskAssessment: parsedResponse.riskAssessment || 'medium',
-      riskScore: parsedResponse.riskScore || data.currentRiskScore,
-      explanation: parsedResponse.explanation || data.currentExplanations,
-      additionalFlags: parsedResponse.additionalFlags || []
-    };
+    try {
+      // Call OpenAI API
+      console.log('DEBUG: Sending request to OpenAI API...');
+      const response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          model: 'gpt-3.5-turbo', // Changed from gpt-4 to gpt-3.5-turbo which is more widely available
+          messages: [
+            {
+              role: 'system', 
+              content: 'You are a fraud detection AI assistant specializing in payment fraud analysis. Your task is to analyze transaction data, identify potential risks, and provide detailed explanations for your assessment.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.3, // Lower temperature for more focused and deterministic outputs
+          response_format: { type: 'json_object' }
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          }
+        }
+      );
+      
+      console.log('DEBUG: Response received from OpenAI API');
+      
+      // Parse the response
+      const responseContent = response.data.choices[0].message.content;
+      console.log('DEBUG: Raw response content:', responseContent);
+      
+      const parsedResponse = JSON.parse(responseContent);
+      console.log('DEBUG: Parsed response:', parsedResponse);
+      
+      // Ensure score is in 0.0-1.0 range
+      let normalizedScore = parsedResponse.riskScore;
+      if (normalizedScore > 1) {
+        normalizedScore = normalizedScore / 100;
+      }
+      
+      // Validate and format the response
+      return {
+        riskAssessment: parsedResponse.riskAssessment || 'moderate',
+        riskScore: normalizedScore || data.currentRiskScore,
+        explanation: parsedResponse.explanation || data.currentExplanations,
+        additionalFlags: parsedResponse.additionalFlags || []
+      };
+    } catch (error: any) {
+      console.error('DEBUG: Error during OpenAI API call:', error.message);
+      if (error.response) {
+        console.error('DEBUG: API error response:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        });
+      }
+      throw error;
+    }
   } catch (error) {
+    console.error('DEBUG: Overall error in getLlmRiskAnalysis:', error);
     logger.error('Error getting LLM risk analysis:', error);
     
     // Return fallback response to ensure the main system still works
     return {
-      riskAssessment: 'medium',
+      riskAssessment: 'moderate',
       riskScore: data.currentRiskScore,
       explanation: data.currentExplanations,
       additionalFlags: ['LLM analysis failed']
@@ -103,22 +142,32 @@ Transaction Details:
 - Device Fingerprint: ${data.deviceFingerprint}
 
 Current Risk Assessment:
-- Risk Score: ${data.currentRiskScore} out of 100
+- Risk Score: ${data.currentRiskScore} (scale: 0.0-1.0)
 - Risk Level: ${data.currentRiskLevel}
-- Current Flags: ${data.currentExplanations.join('; ')}
+- Current Risk Indicators: ${data.currentExplanations.join('; ')}
 
-Please provide a comprehensive fraud risk analysis including:
-1. An overall risk assessment (low, medium, high)
-2. A numerical risk score between 0-100
-3. A list of explanations for your assessment
-4. Any additional red flags not covered by the current system
+Your task is to:
+1. Analyze the transaction data for potential fraud indicators
+2. Consider patterns like unusual transaction amounts, suspicious email domains, and device/IP fingerprints
+3. Look for behavioral anomalies not captured by the rule-based system
+4. Assess the overall fraud risk
 
-Response must be valid JSON in this format:
+Respond with a detailed fraud risk analysis in this JSON format:
 {
-  "riskAssessment": "low|medium|high",
-  "riskScore": number,
-  "explanation": ["reason1", "reason2", ...],
-  "additionalFlags": ["flag1", "flag2", ...]
+  "riskAssessment": "low|moderate|high",
+  "riskScore": [number between 0.0-1.0],
+  "explanation": [
+    "Detailed explanation of risk factor 1",
+    "Detailed explanation of risk factor 2",
+    ...
+  ],
+  "additionalFlags": [
+    "Additional suspicious pattern 1",
+    "Additional suspicious pattern 2",
+    ...
+  ]
 }
+
+Provide specific, detailed explanations rather than general statements. Include behavioral insights and pattern recognition that go beyond simple rule-based flags.
 `;
 }; 

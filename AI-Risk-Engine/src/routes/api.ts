@@ -19,7 +19,7 @@ router.use(apiLimiter);
 
 /**
  * @route POST /api/evaluate-risk
- * @desc Evaluate risk for a transaction
+ * @desc Evaluate risk for a transaction with a fraud score from 0.0 to 1.0
  * @access Public
  */
 router.post(

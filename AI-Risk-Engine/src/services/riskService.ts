@@ -14,8 +14,8 @@ export interface TransactionData {
 
 // Define the risk evaluation result
 export interface RiskEvaluationResult {
-  score: number;
-  riskLevel: 'low' | 'medium' | 'high';
+  score: number; // 0.0-1.0 range
+  riskLevel: 'low' | 'moderate' | 'high';
   explanation: string[];
   llmEnhanced?: boolean;
   llmFlags?: string[];
@@ -26,7 +26,7 @@ export interface FraudStats {
   totalAttempts: number;
   byRiskLevel: {
     low: { count: number; averageScore: number };
-    medium: { count: number; averageScore: number };
+    moderate: { count: number; averageScore: number };
     high: { count: number; averageScore: number };
   };
 }
@@ -38,7 +38,7 @@ interface FraudLogData {
   ip: string;
   deviceFingerprint: string;
   score: number;
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: 'low' | 'moderate' | 'high';
   reason: string;
   llmEnhanced?: boolean;
   llmFlags?: string[];
@@ -66,14 +66,34 @@ export const evaluateRisk = async (
     // Load config
     const config = await getDefaultConfig();
     
-    let score = 0;
+    let scorePoints = 0;
+    const maxPoints = 100; // We'll convert to 0.0-1.0 scale later
     const reasons: string[] = [];
 
     // 1. Check email domain against flagged domains
     const emailDomain = transaction.email.split('@')[1]?.toLowerCase();
-    if (emailDomain && config.flaggedDomains.includes(emailDomain)) {
-      score += 50;
-      reasons.push(`Email domain '${emailDomain}' is in the flagged list`);
+    if (emailDomain) {
+      // Check for high-risk TLDs
+      const highRiskTLDs = ['.ru', '.cn', '.tk', '.top', '.xyz'];
+      const tldMatch = highRiskTLDs.some(tld => emailDomain.endsWith(tld));
+      
+      if (tldMatch) {
+        scorePoints += 25;
+        reasons.push(`Email uses high-risk TLD: ${emailDomain}`);
+      }
+      
+      // Check for known fraudulent domains
+      if (config.flaggedDomains.includes(emailDomain)) {
+        scorePoints += 50;
+        reasons.push(`Email domain '${emailDomain}' is in the flagged list`);
+      }
+      
+      // Check for disposable email services
+      const disposableDomains = ['temp-mail.org', 'tempmail.com', 'mailinator.com', 'guerrillamail.com'];
+      if (disposableDomains.some(domain => emailDomain.includes(domain))) {
+        scorePoints += 30;
+        reasons.push(`Email appears to be from a disposable email service: ${emailDomain}`);
+      }
     }
 
     // 2. Check transaction amount against threshold
@@ -82,19 +102,19 @@ export const evaluateRisk = async (
         30,
         (transaction.amount / config.thresholds.amountThreshold) * 10
       );
-      score += amountFactor;
+      scorePoints += amountFactor;
       reasons.push(`Transaction amount ₹${transaction.amount} exceeds threshold of ₹${config.thresholds.amountThreshold}`);
     }
 
     // 3. Check IP address against suspicious IPs
     if (config.suspiciousIps.includes(transaction.ip)) {
-      score += 40;
+      scorePoints += 40;
       reasons.push(`IP address ${transaction.ip} is in the suspicious list`);
     }
 
     // 4. Check device fingerprint against suspicious devices
     if (config.suspiciousDevices.includes(transaction.deviceFingerprint)) {
-      score += 40;
+      scorePoints += 40;
       reasons.push(`Device fingerprint ${transaction.deviceFingerprint} is in the suspicious list`);
     }
 
@@ -102,7 +122,7 @@ export const evaluateRisk = async (
     const ipCount = recentActivityCache.ips.get(transaction.ip) || 0;
     if (ipCount > 0) {
       const ipFactor = Math.min(20, ipCount * 5);
-      score += ipFactor;
+      scorePoints += ipFactor;
       reasons.push(`IP address ${transaction.ip} has been used ${ipCount} times recently`);
     }
     recentActivityCache.ips.set(transaction.ip, ipCount + 1);
@@ -111,20 +131,23 @@ export const evaluateRisk = async (
     const deviceCount = recentActivityCache.devices.get(transaction.deviceFingerprint) || 0;
     if (deviceCount > 0) {
       const deviceFactor = Math.min(20, deviceCount * 5);
-      score += deviceFactor;
+      scorePoints += deviceFactor;
       reasons.push(`Device fingerprint ${transaction.deviceFingerprint} has been used ${deviceCount} times recently`);
     }
     recentActivityCache.devices.set(transaction.deviceFingerprint, deviceCount + 1);
 
-    // Cap the score at 100
-    score = Math.min(100, score);
+    // Convert score to 0.0-1.0 scale
+    let score = Math.min(1.0, scorePoints / maxPoints);
+    
+    // Round to 2 decimal places for readability
+    score = Math.round(score * 100) / 100;
 
     // Determine risk level based on thresholds
-    let riskLevel: 'low' | 'medium' | 'high';
-    if (score >= config.thresholds.high) {
+    let riskLevel: 'low' | 'moderate' | 'high';
+    if (score >= 0.7) {
       riskLevel = 'high';
-    } else if (score >= config.thresholds.medium) {
-      riskLevel = 'medium';
+    } else if (score >= 0.3) {
+      riskLevel = 'moderate';
     } else {
       riskLevel = 'low';
     }
@@ -156,15 +179,22 @@ export const evaluateRisk = async (
         // Adjust score based on LLM input (weighted blend)
         const ruleBasedWeight = 0.7; // 70% weight to rule-based system
         const llmWeight = 0.3; // 30% weight to LLM
-        score = Math.min(100, Math.round(
-          (score * ruleBasedWeight) + (llmResult.riskScore * llmWeight)
-        ));
+        
+        // Convert LLM score from 0-100 to 0.0-1.0 if needed
+        const normalizedLlmScore = llmResult.riskScore > 1 ? llmResult.riskScore / 100 : llmResult.riskScore;
+        
+        score = Math.min(1.0, 
+          (score * ruleBasedWeight) + (normalizedLlmScore * llmWeight)
+        );
+        
+        // Round to 2 decimal places
+        score = Math.round(score * 100) / 100;
         
         // Re-determine risk level based on new score
-        if (score >= config.thresholds.high) {
+        if (score >= 0.7) {
           riskLevel = 'high';
-        } else if (score >= config.thresholds.medium) {
-          riskLevel = 'medium';
+        } else if (score >= 0.3) {
+          riskLevel = 'moderate';
         } else {
           riskLevel = 'low';
         }
@@ -181,7 +211,7 @@ export const evaluateRisk = async (
         
         logger.info('LLM analysis completed', { 
           originalScore: llmData.currentRiskScore,
-          llmScore: llmResult.riskScore,
+          llmScore: normalizedLlmScore,
           finalScore: score
         });
       } catch (error) {
@@ -281,12 +311,12 @@ export const getFraudStats = async (): Promise<FraudStats> => {
       totalAttempts: 0,
       byRiskLevel: {
         low: { count: 0, averageScore: 0 },
-        medium: { count: 0, averageScore: 0 },
+        moderate: { count: 0, averageScore: 0 },
         high: { count: 0, averageScore: 0 },
       },
     };
 
-    riskLevelCounts.forEach((item: { _id: 'low' | 'medium' | 'high'; count: number; averageScore: number }) => {
+    riskLevelCounts.forEach((item: { _id: 'low' | 'moderate' | 'high'; count: number; averageScore: number }) => {
       stats.byRiskLevel[item._id] = {
         count: item.count,
         averageScore: Math.round(item.averageScore * 100) / 100,
