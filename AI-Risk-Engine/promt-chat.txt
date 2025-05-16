@@ -1,0 +1,111 @@
+Build a complete Node.js + TypeScript backend project named AI Risk Engine.
+The system should evaluate payment transaction risks based on:
+
+Email domain (e.g., @fraud.com)
+
+Transaction amount
+
+Repeated IP address or device fingerprint
+
+Requirements:
+1. Risk Evaluation Endpoint
+POST /evaluate-risk
+
+Accepts { email, amount, ip, deviceFingerprint }
+
+Risk logic:
+
+Flagged email domain ➜ high risk
+
+High amount (> ₹10,000) ➜ increase score
+
+Repeated IP or device ➜ increase score
+
+Return: { score, riskLevel, explanation }
+
+2. Fraud Logging
+Save to MongoDB (if riskLevel !== 'low')
+
+Schema: email, amount, ip, deviceFingerprint, score, riskLevel, reason, createdAt
+
+Use Mongoose
+
+3. Stats Endpoint
+GET /fraud-stats
+
+Return aggregate stats:
+
+Count by riskLevel
+
+Average score per level
+
+4. Config Management
+Dynamic config via JSON or MongoDB
+
+Flagged domains
+
+Thresholds
+
+Suspicious IPs/devices
+
+5. Rate Limiting
+Optional middleware to rate-limit IPs/devices
+
+6. MongoDB Integration
+Use environment variable (MONGODB_URI)
+
+Connect through Dockerized MongoDB instance
+
+Compatible with MongoDB Compass
+
+7. Logging
+Optionally log fraud attempts to a file fraud.log
+
+8. Project Structure
+arduino
+Copy
+Edit
+src/
+├── config/
+├── models/
+├── routes/
+├── services/
+├── utils/
+└── index.ts
+9. Docker Setup
+Create Dockerfile for the API
+
+docker-compose.yml with:
+
+Node.js API (port 6000)
+
+MongoDB (port 27017)
+
+Enable hot-reloading with volumes
+
+Use .env for Mongo URI and configs
+
+ Also Implement:
+ Test Cases (MUST)
+Use Jest or Mocha + Supertest
+
+Write unit tests for:
+
+Risk logic (individual functions)
+
+API responses
+
+MongoDB models (basic validation)
+
+Write integration tests for:
+
+POST /evaluate-risk
+
+GET /fraud-stats
+
+Provide a test/ folder with sample test cases and setup.
+
+🔧 Use These Libraries
+express, mongoose, dotenv, nodemon, uuid, jest or mocha + supertest, ts-node, tsconfig, eslint
+
+ Generate the full project with working backend, REST APIs, Docker support, MongoDB integration, and test cases in Cursor IDE.
