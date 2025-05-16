@@ -11,6 +11,7 @@ export interface LlmAnalysisResult {
   riskScore: number; // 0.0-1.0 scale
   explanation: string[];
   additionalFlags: string[];
+  summary: string; // Condensed explanation for the risk assessment
 }
 
 // Define the interface for LLM request data
@@ -96,12 +97,21 @@ export const getLlmRiskAnalysis = async (data: LlmRequestData): Promise<LlmAnaly
         normalizedScore = normalizedScore / 100;
       }
       
+      // Generate a summary if not provided by the LLM
+      const summary = parsedResponse.summary || generateSummary(
+        parsedResponse.riskAssessment || data.currentRiskLevel,
+        normalizedScore || data.currentRiskScore,
+        parsedResponse.explanation || data.currentExplanations,
+        data
+      );
+      
       // Validate and format the response
       return {
         riskAssessment: parsedResponse.riskAssessment || 'moderate',
         riskScore: normalizedScore || data.currentRiskScore,
         explanation: parsedResponse.explanation || data.currentExplanations,
-        additionalFlags: parsedResponse.additionalFlags || []
+        additionalFlags: parsedResponse.additionalFlags || [],
+        summary: summary
       };
     } catch (error: any) {
       console.error('DEBUG: Error during OpenAI API call:', error.message);
@@ -123,9 +133,34 @@ export const getLlmRiskAnalysis = async (data: LlmRequestData): Promise<LlmAnaly
       riskAssessment: 'moderate',
       riskScore: data.currentRiskScore,
       explanation: data.currentExplanations,
-      additionalFlags: ['LLM analysis failed']
+      additionalFlags: ['LLM analysis failed'],
+      summary: `Transaction risk level: ${data.currentRiskLevel} with score ${data.currentRiskScore}. ${data.currentExplanations[0] || 'No specific risk factors identified.'}`
     };
   }
+};
+
+/**
+ * Generate a summary explanation based on the analysis results
+ */
+const generateSummary = (
+  riskLevel: string, 
+  score: number, 
+  explanations: string[], 
+  data: LlmRequestData
+): string => {
+  // Format score to 2 decimal places
+  const formattedScore = Math.round(score * 100) / 100;
+  
+  // Get the top 1-3 most important explanations
+  const topExplanations = explanations.slice(0, Math.min(3, explanations.length));
+  
+  // Construct reason string
+  let reasonStr = topExplanations.length > 0 
+    ? topExplanations.join('; ')
+    : data.currentExplanations[0] || 'No specific risk factors identified';
+    
+  // Build the summary
+  return `This transaction is considered ${riskLevel} risk with a score of ${formattedScore} due to: ${reasonStr}`;
 };
 
 /**
@@ -165,7 +200,8 @@ Respond with a detailed fraud risk analysis in this JSON format:
     "Additional suspicious pattern 1",
     "Additional suspicious pattern 2",
     ...
-  ]
+  ],
+  "summary": "A single sentence summary of the risk assessment including the most important factors"
 }
 
 Provide specific, detailed explanations rather than general statements. Include behavioral insights and pattern recognition that go beyond simple rule-based flags.

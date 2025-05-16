@@ -19,6 +19,11 @@ export interface RiskEvaluationResult {
   explanation: string[];
   llmEnhanced?: boolean;
   llmFlags?: string[];
+  llmResponse?: {
+    score: number;
+    riskLevel: string;
+    explanation: string;
+  };
 }
 
 // Stats interface
@@ -209,11 +214,29 @@ export const evaluateRisk = async (
           }
         });
         
+        // Create LLM response object
+        const llmResponse = {
+          score: normalizedLlmScore,
+          riskLevel: llmResult.riskAssessment,
+          explanation: llmResult.summary
+        };
+        
         logger.info('LLM analysis completed', { 
           originalScore: llmData.currentRiskScore,
           llmScore: normalizedLlmScore,
-          finalScore: score
+          finalScore: score,
+          llmSummary: llmResult.summary
         });
+        
+        // Return with LLM response included
+        return {
+          score,
+          riskLevel,
+          explanation: reasons,
+          llmEnhanced,
+          llmFlags,
+          llmResponse
+        };
       } catch (error) {
         logger.error('Error during LLM analysis, continuing with rule-based assessment only:', error);
       }

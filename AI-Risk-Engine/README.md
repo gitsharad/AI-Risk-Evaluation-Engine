@@ -4,7 +4,7 @@ A Node.js backend system for evaluating payment transaction risks based on vario
 
 ## Features
 
-- **Risk Evaluation**: Analyzes transactions based on email domain, amount, IP address, and device fingerprint
+- **Risk Evaluation**: Analyzes transactions with a 0.0-1.0 fraud score scale based on industry best practices
 - **LLM Integration**: Enhanced risk analysis powered by OpenAI's language models
 - **Fraud Logging**: Saves suspicious transactions to MongoDB
 - **Statistics API**: Get aggregate fraud data by risk level
@@ -45,11 +45,22 @@ Response:
 {
   "success": true,
   "data": {
-    "score": 35,
-    "riskLevel": "medium",
-    "explanation": ["Transaction amount ₹5000 exceeds threshold"],
+    "score": 0.45,
+    "riskLevel": "moderate",
+    "explanation": [
+      "Transaction amount ₹5000 exceeds threshold", 
+      "IP address has been used multiple times recently"
+    ],
     "llmEnhanced": true,
-    "llmFlags": ["Unusual transaction pattern for this account"]
+    "llmFlags": [
+      "Unusual transaction pattern for this account", 
+      "Transaction velocity indicates potential risk"
+    ],
+    "llmResponse": {
+      "score": 0.52,
+      "riskLevel": "moderate",
+      "explanation": "This transaction is considered moderate risk with a score of 0.52 due to: Transaction amount exceeds threshold; IP address has been used multiple times recently"
+    }
   }
 }
 ```
@@ -67,9 +78,9 @@ Response:
   "data": {
     "totalAttempts": 128,
     "byRiskLevel": {
-      "low": { "count": 58, "averageScore": 15.2 },
-      "medium": { "count": 42, "averageScore": 45.7 },
-      "high": { "count": 28, "averageScore": 82.3 }
+      "low": { "count": 58, "averageScore": 0.15 },
+      "moderate": { "count": 42, "averageScore": 0.46 },
+      "high": { "count": 28, "averageScore": 0.82 }
     }
   }
 }
@@ -88,9 +99,6 @@ Response:
   "data": {
     "flaggedDomains": ["fraud.com", "temp-mail.org", "fakeemail.com"],
     "thresholds": {
-      "low": 30,
-      "medium": 60,
-      "high": 80,
       "amountThreshold": 10000
     },
     "suspiciousIps": ["1.2.3.4"],
@@ -171,8 +179,23 @@ The LLM will:
 - Provide additional risk insights not covered by rules
 - Contribute to the final risk score through a weighted blend
 - Add unique risk flags and explanations to the response
+- Generate a summarized risk assessment in the `llmResponse` field
 
-This provides more nuanced fraud detection, especially for complex or novel fraud patterns.
+### Understanding the Risk Scoring System
+
+The system now uses a 0.0-1.0 scale for fraud scoring:
+- **0.0-0.3**: Low risk
+- **0.3-0.7**: Moderate risk
+- **0.7-1.0**: High risk
+
+The final score is calculated using:
+- Rule-based indicators (70% weight)
+- LLM-based analysis (30% weight, when enabled)
+
+The new `llmResponse` field provides a consolidated view of the LLM's assessment with:
+- A single-score fraud rating (0.0-1.0)
+- The determined risk level (low, moderate, high)
+- A concise explanation summarizing the key risk factors
 
 ## Testing
 
