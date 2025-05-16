@@ -4345,3 +4345,1841 @@ This makes it easier to integrate into dashboards or alerts where you need a qui
 }
 ```
 
+---
+
+**User**
+
+update readme file
+
+---
+
+**Cursor**
+
+```markdown
+# AI Risk Engine
+
+A Node.js backend system for evaluating payment transaction risks based on various fraud indicators.
+
+## Features
+
+- **Risk Evaluation**: Analyzes transactions with a 0.0-1.0 fraud score scale based on industry best practices
+- **LLM Integration**: Enhanced risk analysis powered by OpenAI's language models
+- **Fraud Logging**: Saves suspicious transactions to MongoDB
+- **Statistics API**: Get aggregate fraud data by risk level
+- **Configuration Management**: Dynamic updates of risk thresholds and flagged entities
+- **Rate Limiting**: Prevents abuse of the API endpoints
+- **Docker Support**: Easy deployment with Docker and MongoDB
+
+## Tech Stack
+
+- Node.js + TypeScript
+- Express.js
+- MongoDB with Mongoose
+- OpenAI API for LLM integration
+- Jest for testing
+- Docker and docker-compose
+
+## API Endpoints
+
+### Risk Evaluation
+
+```
+POST /api/evaluate-risk
+```
+
+Request Body:
+```json
+{
+  "email": "user@example.com",
+  "amount": 5000,
+  "ip": "192.168.1.1",
+  "deviceFingerprint": "d3v1c3-1d-h3r3",
+  "enableLlmAnalysis": true
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "score": 0.45,
+    "riskLevel": "moderate",
+    "explanation": [
+      "Transaction amount ₹5000 exceeds threshold", 
+      "IP address has been used multiple times recently"
+    ],
+    "llmEnhanced": true,
+    "llmFlags": [
+      "Unusual transaction pattern for this account", 
+      "Transaction velocity indicates potential risk"
+    ],
+    "llmResponse": {
+      "score": 0.52,
+      "riskLevel": "moderate",
+      "explanation": "This transaction is considered moderate risk with a score of 0.52 due to: Transaction amount exceeds threshold; IP address has been used multiple times recently"
+    }
+  }
+}
+```
+
+### Fraud Statistics
+
+```
+GET /api/fraud-stats
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "totalAttempts": 128,
+    "byRiskLevel": {
+      "low": { "count": 58, "averageScore": 0.15 },
+      "moderate": { "count": 42, "averageScore": 0.46 },
+      "high": { "count": 28, "averageScore": 0.82 }
+    }
+  }
+}
+```
+
+### Configuration Management
+
+```
+GET /config
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "flaggedDomains": ["fraud.com", "temp-mail.org", "fakeemail.com"],
+    "thresholds": {
+      "amountThreshold": 10000
+    },
+    "suspiciousIps": ["1.2.3.4"],
+    "suspiciousDevices": ["blocked-device-id"]
+  }
+}
+```
+
+```
+PUT /config
+```
+
+Request Body:
+```json
+{
+  "flaggedDomains": ["fraud.com", "scam.net", "temp-mail.org"],
+  "thresholds": {
+    "amountThreshold": 15000
+  }
+}
+```
+
+## Installation and Setup
+
+### Prerequisites
+
+- Node.js (>= 14.x)
+- npm or yarn
+- MongoDB (if not using Docker)
+- Docker and docker-compose (for containerized setup)
+- OpenAI API key (for LLM integration)
+
+### Local Development
+
+1. Clone the repository
+   ```
+   git clone https://github.com/yourusername/ai-risk-engine.git
+   cd ai-risk-engine
+   ```
+
+2. Install dependencies
+   ```
+   npm install
+   ```
+
+3. Create a `.env` file based on the example
+   ```
+   cp sample.env .env
+   ```
+
+4. Update environment variables in `.env` as needed, especially the `OPENAI_API_KEY` for LLM integration
+
+5. Start the development server
+   ```
+   npm run dev
+   ```
+
+### Using Docker
+
+1. Build and start containers
+   ```
+   docker-compose up -d
+   ```
+
+2. The API will be available at `http://localhost:6000`
+
+3. MongoDB will be available at `mongodb://localhost:27017`
+
+## Using the LLM Integration
+
+To enable LLM-enhanced risk analysis:
+
+1. Make sure you have set your `OPENAI_API_KEY` in the `.env` file
+2. Set `enableLlmAnalysis: true` in your API request
+
+The LLM will:
+- Process the same transaction data used in rule-based analysis
+- Provide additional risk insights not covered by rules
+- Contribute to the final risk score through a weighted blend
+- Add unique risk flags and explanations to the response
+- Generate a summarized risk assessment in the `llmResponse` field
+
+### Understanding the Risk Scoring System
+
+The system now uses a 0.0-1.0 scale for fraud scoring:
+- **0.0-0.3**: Low risk
+- **0.3-0.7**: Moderate risk
+- **0.7-1.0**: High risk
+
+The final score is calculated using:
+- Rule-based indicators (70% weight)
+- LLM-based analysis (30% weight, when enabled)
+
+The new `llmResponse` field provides a consolidated view of the LLM's assessment with:
+- A single-score fraud rating (0.0-1.0)
+- The determined risk level (low, moderate, high)
+- A concise explanation summarizing the key risk factors
+
+## Testing
+
+Run tests with Jest:
+
+```
+npm test
+```
+
+Or with coverage report:
+
+```
+npm test -- --coverage
+```
+
+## License
+
+ISC
+```
+
+The README has been updated to reflect all the changes we've made to the AI Risk Engine:
+
+1. **New Fraud Score Scale**: The system now uses a more standard 0.0-1.0 scale for fraud scoring instead of the previous 0-100 scale.
+
+2. **Updated Risk Level Terminology**: Changed from "low/medium/high" to "low/moderate/high" to better align with industry standards.
+
+3. **Added llmResponse Field**: The API now includes a consolidated LLM assessment with score, risk level, and a concise explanation.
+
+4. **Enhanced Documentation**: Added a new section explaining the risk scoring system, including the weighting between rule-based and LLM-based components.
+
+5. **Updated Examples**: All JSON examples now reflect the new scoring scale and terminology.
+
+6. **Risk Threshold Changes**: Updated the configuration examples to reflect the simplified threshold approach.
+
+These updates make the documentation more accurate and help users understand how to interpret the risk assessment results, especially the new llmResponse field that provides a concise summary of the LLM's fraud analysis.
+
+---
+
+**User**
+
+For the code present, we get this error:
+```
+Cannot find name 'beforeAll'.
+```
+How can I resolve this? If you propose a fix, please make it concise.
+
+---
+
+**Cursor**
+
+The error occurs because Jest test lifecycle functions aren't being imported. Add this import at the top of the file:
+
+```typescript
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import { beforeAll, afterEach, afterAll } from '@jest/globals';
+
+let mongoServer: MongoMemoryServer;
+
+// Connect to a new in-memory database before running any tests
+beforeAll(async () => {
+  mongoServer = await MongoMemoryServer.create();
+  const mongoUri = mongoServer.getUri();
+  
+  await mongoose.connect(mongoUri);
+});
+
+// Clean up database between tests
+afterEach(async () => {
+  const collections = mongoose.connection.collections;
+  
+  for (const key in collections) {
+    const collection = collections[key];
+    await collection.deleteMany({});
+  }
+});
+
+// Close database connection after all tests are done
+afterAll(async () => {
+  await mongoose.connection.close();
+  await mongoServer.stop();
+});
+
+export {}; // Export an empty object to make TypeScript treat this as a module
+```
+
+---
+
+**User**
+
+For the code present, we get this error:
+```
+Cannot find name 'jest'.
+```
+How can I resolve this? If you propose a fix, please make it concise.
+
+---
+
+**Cursor**
+
+Add Jest globals import:
+
+```typescript
+import request from 'supertest';
+import express from 'express';
+import apiRoutes from '../../src/routes/api';
+import { evaluateRisk, getFraudStats } from '../../src/services/riskService';
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+
+// Mock the risk service
+jest.mock('../../src/services/riskService', () => ({
+  __esModule: true,
+  evaluateRisk: jest.fn(),
+  getFraudStats: jest.fn(),
+}));
+```
+
+Now fix the mockResolvedValue typings:
+
+```typescript
+import request from 'supertest';
+import express from 'express';
+import apiRoutes from '../../src/routes/api';
+import { evaluateRisk, getFraudStats } from '../../src/services/riskService';
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+
+// Create proper types for mocked functions
+type MockedEvaluateRisk = jest.MockedFunction<typeof evaluateRisk>;
+type MockedGetFraudStats = jest.MockedFunction<typeof getFraudStats>;
+
+// Mock the risk service
+jest.mock('../../src/services/riskService', () => ({
+  __esModule: true,
+  evaluateRisk: jest.fn(),
+  getFraudStats: jest.fn(),
+}));
+
+// Create express app for testing
+const app = express();
+app.use(express.json());
+app.use('/api', apiRoutes);
+
+// Add generic error handler for tests
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  res.status(500).json({ error: err.message });
+});
+
+describe('API Routes', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+  
+  describe('POST /api/evaluate-risk', () => {
+    it('should evaluate risk for valid transaction data', async () => {
+      const mockResult = {
+        score: 25,
+        riskLevel: 'low',
+        explanation: ['No suspicious activity detected'],
+      };
+      
+      (evaluateRisk as MockedEvaluateRisk).mockResolvedValue(mockResult);
+      
+      const response = await request(app)
+        .post('/api/evaluate-risk')
+        .send({
+          email: 'user@example.com',
+          amount: 1000,
+          ip: '192.168.1.1',
+          deviceFingerprint: 'device123',
+        });
+      
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toEqual(mockResult);
+      expect(evaluateRisk).toHaveBeenCalledWith({
+        email: 'user@example.com',
+        amount: 1000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'device123',
+        enableLlmAnalysis: false
+      });
+    });
+    
+    it('should return 400 for missing required fields', async () => {
+      const response = await request(app)
+        .post('/api/evaluate-risk')
+        .send({
+          email: 'user@example.com',
+          // amount is missing
+          ip: '192.168.1.1',
+          deviceFingerprint: 'device123',
+        });
+      
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(evaluateRisk).not.toHaveBeenCalled();
+    });
+    
+    it('should return 400 for invalid email format', async () => {
+      const response = await request(app)
+        .post('/api/evaluate-risk')
+        .send({
+          email: 'invalid-email',
+          amount: 1000,
+          ip: '192.168.1.1',
+          deviceFingerprint: 'device123',
+        });
+      
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(evaluateRisk).not.toHaveBeenCalled();
+    });
+    
+    it('should return 400 for invalid amount', async () => {
+      const response = await request(app)
+        .post('/api/evaluate-risk')
+        .send({
+          email: 'user@example.com',
+          amount: -100, // Negative amount
+          ip: '192.168.1.1',
+          deviceFingerprint: 'device123',
+        });
+      
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(evaluateRisk).not.toHaveBeenCalled();
+    });
+    
+    it('should handle errors from risk service', async () => {
+      (evaluateRisk as MockedEvaluateRisk).mockRejectedValue(new Error('Service error'));
+      
+      const response = await request(app)
+        .post('/api/evaluate-risk')
+        .send({
+          email: 'user@example.com',
+          amount: 1000,
+          ip: '192.168.1.1',
+          deviceFingerprint: 'device123',
+        });
+      
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Service error');
+    });
+  });
+  
+  describe('GET /api/fraud-stats', () => {
+    it('should return fraud statistics', async () => {
+      const mockStats = {
+        totalAttempts: 100,
+        byRiskLevel: {
+          low: { count: 50, averageScore: 0.2 },
+          moderate: { count: 30, averageScore: 0.5 },
+          high: { count: 20, averageScore: 0.85 },
+        },
+      };
+      
+      (getFraudStats as MockedGetFraudStats).mockResolvedValue(mockStats);
+      
+      const response = await request(app).get('/api/fraud-stats');
+      
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toEqual(mockStats);
+      expect(getFraudStats).toHaveBeenCalled();
+    });
+    
+    it('should handle errors from fraud stats service', async () => {
+      (getFraudStats as MockedGetFraudStats).mockRejectedValue(new Error('Stats error'));
+      
+      const response = await request(app).get('/api/fraud-stats');
+      
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Stats error');
+    });
+  });
+});
+```
+
+Fix the remaining type error:
+
+```typescript
+import request from 'supertest';
+import express from 'express';
+import apiRoutes from '../../src/routes/api';
+import { evaluateRisk, getFraudStats, RiskEvaluationResult } from '../../src/services/riskService';
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+
+// Create proper types for mocked functions
+type MockedEvaluateRisk = jest.MockedFunction<typeof evaluateRisk>;
+type MockedGetFraudStats = jest.MockedFunction<typeof getFraudStats>;
+
+// Mock the risk service
+jest.mock('../../src/services/riskService', () => ({
+  __esModule: true,
+  evaluateRisk: jest.fn(),
+  getFraudStats: jest.fn(),
+}));
+
+// Create express app for testing
+const app = express();
+app.use(express.json());
+app.use('/api', apiRoutes);
+
+// Add generic error handler for tests
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  res.status(500).json({ error: err.message });
+});
+
+describe('API Routes', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+  
+  describe('POST /api/evaluate-risk', () => {
+    it('should evaluate risk for valid transaction data', async () => {
+      const mockResult: RiskEvaluationResult = {
+        score: 0.25,
+        riskLevel: 'low',
+        explanation: ['No suspicious activity detected'],
+      };
+      
+      (evaluateRisk as MockedEvaluateRisk).mockResolvedValue(mockResult);
+      
+      const response = await request(app)
+        .post('/api/evaluate-risk')
+        .send({
+          email: 'user@example.com',
+          amount: 1000,
+          ip: '192.168.1.1',
+          deviceFingerprint: 'device123',
+        });
+      
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toEqual(mockResult);
+      expect(evaluateRisk).toHaveBeenCalledWith({
+        email: 'user@example.com',
+        amount: 1000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'device123',
+        enableLlmAnalysis: false
+      });
+    });
+    
+    it('should return 400 for missing required fields', async () => {
+      const response = await request(app)
+        .post('/api/evaluate-risk')
+        .send({
+          email: 'user@example.com',
+          // amount is missing
+          ip: '192.168.1.1',
+          deviceFingerprint: 'device123',
+        });
+      
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(evaluateRisk).not.toHaveBeenCalled();
+    });
+    
+    it('should return 400 for invalid email format', async () => {
+      const response = await request(app)
+        .post('/api/evaluate-risk')
+        .send({
+          email: 'invalid-email',
+          amount: 1000,
+          ip: '192.168.1.1',
+          deviceFingerprint: 'device123',
+        });
+      
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(evaluateRisk).not.toHaveBeenCalled();
+    });
+    
+    it('should return 400 for invalid amount', async () => {
+      const response = await request(app)
+        .post('/api/evaluate-risk')
+        .send({
+          email: 'user@example.com',
+          amount: -100, // Negative amount
+          ip: '192.168.1.1',
+          deviceFingerprint: 'device123',
+        });
+      
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(evaluateRisk).not.toHaveBeenCalled();
+    });
+    
+    it('should handle errors from risk service', async () => {
+      (evaluateRisk as MockedEvaluateRisk).mockRejectedValue(new Error('Service error'));
+      
+      const response = await request(app)
+        .post('/api/evaluate-risk')
+        .send({
+          email: 'user@example.com',
+          amount: 1000,
+          ip: '192.168.1.1',
+          deviceFingerprint: 'device123',
+        });
+      
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Service error');
+    });
+  });
+  
+  describe('GET /api/fraud-stats', () => {
+    it('should return fraud statistics', async () => {
+      const mockStats = {
+        totalAttempts: 100,
+        byRiskLevel: {
+          low: { count: 50, averageScore: 0.2 },
+          moderate: { count: 30, averageScore: 0.5 },
+          high: { count: 20, averageScore: 0.85 },
+        },
+      };
+      
+      (getFraudStats as MockedGetFraudStats).mockResolvedValue(mockStats);
+      
+      const response = await request(app).get('/api/fraud-stats');
+      
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toEqual(mockStats);
+      expect(getFraudStats).toHaveBeenCalled();
+    });
+    
+    it('should handle errors from fraud stats service', async () => {
+      (getFraudStats as MockedGetFraudStats).mockRejectedValue(new Error('Stats error'));
+      
+      const response = await request(app).get('/api/fraud-stats');
+      
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Stats error');
+    });
+  });
+});
+```
+
+---
+
+**User**
+
+For the code present, we get this error:
+```
+Cannot find name 'jest'.
+```
+How can I resolve this? If you propose a fix, please make it concise.
+
+---
+
+**Cursor**
+
+Add Jest globals import:
+
+```typescript
+import { evaluateRisk, TransactionData } from '../../src/services/riskService';
+import RiskConfig, { getDefaultConfig } from '../../src/models/RiskConfig';
+import FraudLog from '../../src/models/FraudLog';
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+
+// Mock the models
+jest.mock('../../src/models/RiskConfig', () => ({
+```
+
+Let's try again with the complete line:
+
+```typescript
+import { evaluateRisk, TransactionData } from '../../src/services/riskService';
+import RiskConfig, { getDefaultConfig } from '../../src/models/RiskConfig';
+import FraudLog from '../../src/models/FraudLog';
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+
+// Mock the models
+```
+
+Fix mock typing issues:
+
+```typescript
+import { evaluateRisk, TransactionData } from '../../src/services/riskService';
+import RiskConfig, { getDefaultConfig } from '../../src/models/RiskConfig';
+import FraudLog from '../../src/models/FraudLog';
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+
+// Define mock types
+type MockedGetDefaultConfig = jest.MockedFunction<typeof getDefaultConfig>;
+type MockedFraudLogCreate = jest.MockedFunction<typeof FraudLog.create>;
+
+// Mock the models
+jest.mock('../../src/models/RiskConfig', () => ({
+  __esModule: true,
+  default: {
+    findOne: jest.fn(),
+    countDocuments: jest.fn(),
+    create: jest.fn(),
+  },
+  getDefaultConfig: jest.fn(),
+}));
+
+jest.mock('../../src/models/FraudLog', () => ({
+  __esModule: true,
+  default: {
+    create: jest.fn(),
+  },
+}));
+
+// Reset the mocks before each test
+beforeEach(() => {
+  jest.resetAllMocks();
+});
+
+describe('Risk Service', () => {
+  describe('evaluateRisk', () => {
+    
+    // Mock configuration for tests
+    const mockConfig = {
+      flaggedDomains: ['fraud.com', 'temp-mail.org'],
+      thresholds: {
+        low: 30,
+        medium: 60,
+        high: 80,
+        amountThreshold: 10000,
+      },
+      suspiciousIps: ['192.168.1.100'],
+      suspiciousDevices: ['device123'],
+      save: jest.fn().mockResolvedValue(true),
+    };
+    
+    beforeEach(() => {
+      // Setup the mock for getDefaultConfig
+      (getDefaultConfig as MockedGetDefaultConfig).mockResolvedValue(mockConfig);
+      (FraudLog.create as MockedFraudLogCreate).mockResolvedValue({} as any);
+    });
+    
+    it('should return low risk for normal transaction', async () => {
+      const transaction: TransactionData = {
+        email: 'user@example.com',
+        amount: 1000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'normaldevice',
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.riskLevel).toBe('low');
+      expect(result.score).toBeLessThan(30);
+      expect(FraudLog.create).not.toHaveBeenCalled();
+    });
+    
+    it('should flag high risk for suspicious email domain', async () => {
+      const transaction: TransactionData = {
+        email: 'user@fraud.com',
+        amount: 1000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'normaldevice',
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.riskLevel).not.toBe('low');
+      expect(result.score).toBeGreaterThanOrEqual(50);
+      expect(FraudLog.create).toHaveBeenCalled();
+      expect(result.explanation.some(msg => msg.includes('fraud.com'))).toBe(true);
+    });
+    
+    it('should increase risk for high amount', async () => {
+      const transaction: TransactionData = {
+        email: 'user@example.com',
+        amount: 15000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'normaldevice',
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.score).toBeGreaterThan(0);
+      expect(result.explanation.some(msg => msg.includes('amount'))).toBe(true);
+    });
+    
+    it('should flag high risk for suspicious IP', async () => {
+      const transaction: TransactionData = {
+        email: 'user@example.com',
+        amount: 1000,
+        ip: '192.168.1.100', // Suspicious IP from config
+        deviceFingerprint: 'normaldevice',
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.riskLevel).not.toBe('low');
+      expect(result.score).toBeGreaterThanOrEqual(40);
+      expect(FraudLog.create).toHaveBeenCalled();
+      expect(result.explanation.some(msg => msg.includes('192.168.1.100'))).toBe(true);
+    });
+    
+    it('should flag high risk for suspicious device', async () => {
+      const transaction: TransactionData = {
+        email: 'user@example.com',
+        amount: 1000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'device123', // Suspicious device from config
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.riskLevel).not.toBe('low');
+      expect(result.score).toBeGreaterThanOrEqual(40);
+      expect(FraudLog.create).toHaveBeenCalled();
+      expect(result.explanation.some(msg => msg.includes('device123'))).toBe(true);
+    });
+    
+    it('should handle multiple risk factors cumulatively', async () => {
+      const transaction: TransactionData = {
+        email: 'user@fraud.com',
+        amount: 15000,
+        ip: '192.168.1.100',
+        deviceFingerprint: 'device123',
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.riskLevel).toBe('high');
+      expect(result.score).toBe(100); // Should be capped at 100
+      expect(FraudLog.create).toHaveBeenCalled();
+      expect(result.explanation.length).toBeGreaterThanOrEqual(3);
+    });
+    
+    it('should handle errors gracefully', async () => {
+      (getDefaultConfig as MockedGetDefaultConfig).mockRejectedValue(new Error('Database error'));
+      
+      const transaction: TransactionData = {
+        email: 'user@example.com',
+        amount: 1000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'normaldevice',
+      };
+      
+      await expect(evaluateRisk(transaction)).rejects.toThrow('Failed to evaluate risk');
+    });
+  });
+});
+```
+
+Let's fix the remaining typing issues:
+
+```typescript
+import { evaluateRisk, TransactionData } from '../../src/services/riskService';
+import RiskConfig, { getDefaultConfig, IRiskConfig } from '../../src/models/RiskConfig';
+import FraudLog from '../../src/models/FraudLog';
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+
+// Define mock types
+type MockedGetDefaultConfig = jest.MockedFunction<typeof getDefaultConfig>;
+type MockedFraudLogCreate = jest.MockedFunction<typeof FraudLog.create>;
+
+// Mock the models
+jest.mock('../../src/models/RiskConfig', () => ({
+  __esModule: true,
+  default: {
+    findOne: jest.fn(),
+    countDocuments: jest.fn(),
+    create: jest.fn(),
+  },
+  getDefaultConfig: jest.fn(),
+}));
+
+jest.mock('../../src/models/FraudLog', () => ({
+  __esModule: true,
+  default: {
+    create: jest.fn(),
+  },
+}));
+
+// Reset the mocks before each test
+beforeEach(() => {
+  jest.resetAllMocks();
+});
+
+describe('Risk Service', () => {
+  describe('evaluateRisk', () => {
+    
+    // Mock configuration for tests
+    const mockConfig = {
+      flaggedDomains: ['fraud.com', 'temp-mail.org'],
+      thresholds: {
+        low: 30,
+        medium: 60,
+        high: 80,
+        amountThreshold: 10000,
+      },
+      suspiciousIps: ['192.168.1.100'],
+      suspiciousDevices: ['device123'],
+      save: jest.fn().mockResolvedValue(true as any),
+    } as unknown as IRiskConfig;
+    
+    beforeEach(() => {
+      // Setup the mock for getDefaultConfig
+      (getDefaultConfig as MockedGetDefaultConfig).mockResolvedValue(mockConfig);
+      (FraudLog.create as MockedFraudLogCreate).mockResolvedValue({} as any);
+    });
+    
+    it('should return low risk for normal transaction', async () => {
+      const transaction: TransactionData = {
+        email: 'user@example.com',
+        amount: 1000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'normaldevice',
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.riskLevel).toBe('low');
+      expect(result.score).toBeLessThan(0.3); // Updated for 0.0-1.0 scale
+      expect(FraudLog.create).not.toHaveBeenCalled();
+    });
+    
+    it('should flag high risk for suspicious email domain', async () => {
+      const transaction: TransactionData = {
+        email: 'user@fraud.com',
+        amount: 1000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'normaldevice',
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.riskLevel).not.toBe('low');
+      expect(result.score).toBeGreaterThanOrEqual(0.5); // Updated for 0.0-1.0 scale
+      expect(FraudLog.create).toHaveBeenCalled();
+      expect(result.explanation.some(msg => msg.includes('fraud.com'))).toBe(true);
+    });
+    
+    it('should increase risk for high amount', async () => {
+      const transaction: TransactionData = {
+        email: 'user@example.com',
+        amount: 15000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'normaldevice',
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.score).toBeGreaterThan(0);
+      expect(result.explanation.some(msg => msg.includes('amount'))).toBe(true);
+    });
+    
+    it('should flag high risk for suspicious IP', async () => {
+      const transaction: TransactionData = {
+        email: 'user@example.com',
+        amount: 1000,
+        ip: '192.168.1.100', // Suspicious IP from config
+        deviceFingerprint: 'normaldevice',
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.riskLevel).not.toBe('low');
+      expect(result.score).toBeGreaterThanOrEqual(0.4); // Updated for 0.0-1.0 scale
+      expect(FraudLog.create).toHaveBeenCalled();
+      expect(result.explanation.some(msg => msg.includes('192.168.1.100'))).toBe(true);
+    });
+    
+    it('should flag high risk for suspicious device', async () => {
+      const transaction: TransactionData = {
+        email: 'user@example.com',
+        amount: 1000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'device123', // Suspicious device from config
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.riskLevel).not.toBe('low');
+      expect(result.score).toBeGreaterThanOrEqual(0.4); // Updated for 0.0-1.0 scale
+      expect(FraudLog.create).toHaveBeenCalled();
+      expect(result.explanation.some(msg => msg.includes('device123'))).toBe(true);
+    });
+    
+    it('should handle multiple risk factors cumulatively', async () => {
+      const transaction: TransactionData = {
+        email: 'user@fraud.com',
+        amount: 15000,
+        ip: '192.168.1.100',
+        deviceFingerprint: 'device123',
+      };
+      
+      const result = await evaluateRisk(transaction);
+      
+      expect(result.riskLevel).toBe('high');
+      expect(result.score).toBe(1.0); // Updated to 1.0 (max score)
+      expect(FraudLog.create).toHaveBeenCalled();
+      expect(result.explanation.length).toBeGreaterThanOrEqual(3);
+    });
+    
+    it('should handle errors gracefully', async () => {
+      (getDefaultConfig as MockedGetDefaultConfig).mockRejectedValue(new Error('Database error'));
+      
+      const transaction: TransactionData = {
+        email: 'user@example.com',
+        amount: 1000,
+        ip: '192.168.1.1',
+        deviceFingerprint: 'normaldevice',
+      };
+      
+      await expect(evaluateRisk(transaction)).rejects.toThrow('Failed to evaluate risk');
+    });
+  });
+});
+```
+
+---
+
+**User**
+
+For the code present, we get this error:
+```
+Argument of type 'any' is not assignable to parameter of type 'never'.
+```
+How can I resolve this? If you propose a fix, please make it concise.
+
+---
+
+**Cursor**
+
+Fix by specifying the mock function's type:
+
+```typescript
+      suspiciousIps: ['192.168.1.100'],
+      suspiciousDevices: ['device123'],
+      save: jest.fn<() => Promise<IRiskConfig>>().mockResolvedValue(true as any),
+    } as unknown as IRiskConfig;
+```
+
+---
+
+**User**
+
+write test cases to cover  llmService.ts 
+
+---
+
+**Cursor**
+
+I'll create a test file for the LLM service to cover its functionality:
+
+```typescript
+import { getLlmRiskAnalysis, LlmRequestData, LlmAnalysisResult } from '../../src/services/llmService';
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+import axios from 'axios';
+
+// Mock axios
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+// Mock environment variables
+const originalEnv = process.env;
+beforeEach(() => {
+  jest.resetAllMocks();
+  process.env = { ...originalEnv, OPENAI_API_KEY: 'test-api-key' };
+  
+  // Spy on console methods
+  jest.spyOn(console, 'log').mockImplementation();
+  jest.spyOn(console, 'error').mockImplementation();
+});
+
+afterEach(() => {
+  process.env = originalEnv;
+});
+
+describe('LLM Service', () => {
+  const mockRequestData: LlmRequestData = {
+    email: 'test@example.com',
+    amount: 5000,
+    ip: '192.168.1.1',
+    deviceFingerprint: 'device123',
+    currentRiskScore: 0.6,
+    currentRiskLevel: 'moderate',
+    currentExplanations: ['High transaction amount', 'Repeated IP usage']
+  };
+  
+  const mockOpenAIResponse = {
+    data: {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              riskAssessment: 'high',
+              riskScore: 0.85,
+              explanation: ['Suspicious email pattern', 'Transaction amount exceeds typical range'],
+              additionalFlags: ['Unusual time of day', 'IP address associated with VPN'],
+              summary: 'This transaction is considered high risk with a score of 0.85 due to: Suspicious email pattern; Transaction amount exceeds typical range'
+            })
+          }
+        }
+      ]
+    }
+  };
+
+  it('should successfully get risk analysis from OpenAI', async () => {
+    mockedAxios.post.mockResolvedValueOnce(mockOpenAIResponse);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      'https://api.openai.com/v1/chat/completions',
+      expect.objectContaining({
+        model: 'gpt-3.5-turbo',
+        messages: expect.arrayContaining([
+          expect.objectContaining({ role: 'system' }),
+          expect.objectContaining({ role: 'user' })
+        ])
+      }),
+      expect.objectContaining({
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-api-key'
+        }
+      })
+    );
+    
+    expect(result).toEqual({
+      riskAssessment: 'high',
+      riskScore: 0.85,
+      explanation: ['Suspicious email pattern', 'Transaction amount exceeds typical range'],
+      additionalFlags: ['Unusual time of day', 'IP address associated with VPN'],
+      summary: 'This transaction is considered high risk with a score of 0.85 due to: Suspicious email pattern; Transaction amount exceeds typical range'
+    });
+  });
+  
+  it('should normalize scores greater than 1.0 to a 0.0-1.0 scale', async () => {
+    const largeScoreResponse = {
+      data: {
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                riskAssessment: 'high',
+                riskScore: 92,
+                explanation: ['Very high risk score'],
+                additionalFlags: ['Score normalization test']
+              })
+            }
+          }
+        ]
+      }
+    };
+    
+    mockedAxios.post.mockResolvedValueOnce(largeScoreResponse);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(result.riskScore).toBeLessThanOrEqual(1.0);
+    expect(result.riskScore).toBeCloseTo(0.92);
+  });
+  
+  it('should generate a summary if not provided by LLM', async () => {
+    const responseWithoutSummary = {
+      data: {
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                riskAssessment: 'moderate',
+                riskScore: 0.6,
+                explanation: ['Moderate risk indicators present'],
+                additionalFlags: ['Some suspicious patterns']
+              })
+            }
+          }
+        ]
+      }
+    };
+    
+    mockedAxios.post.mockResolvedValueOnce(responseWithoutSummary);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(result.summary).toBeDefined();
+    expect(result.summary).toContain('moderate risk');
+    expect(result.summary).toContain('0.6');
+  });
+  
+  it('should return fallback response when API key is missing', async () => {
+    process.env.OPENAI_API_KEY = '';
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(mockedAxios.post).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+  
+  it('should handle API errors gracefully', async () => {
+    const mockError = new Error('API Error');
+    mockError.response = {
+      status: 429,
+      statusText: 'Too Many Requests',
+      data: { error: { message: 'Rate limit exceeded' } }
+    };
+    
+    mockedAxios.post.mockRejectedValueOnce(mockError);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(console.error).toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+  
+  it('should handle malformed JSON responses', async () => {
+    const malformedResponse = {
+      data: {
+        choices: [
+          {
+            message: {
+              content: '{invalid-json}'
+            }
+          }
+        ]
+      }
+    };
+    
+    mockedAxios.post.mockResolvedValueOnce(malformedResponse);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(console.error).toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+});
+```
+
+Let's fix the linter errors:
+
+```typescript
+import { getLlmRiskAnalysis, LlmRequestData, LlmAnalysisResult } from '../../src/services/llmService';
+import { jest, describe, beforeEach, afterEach, it, expect } from '@jest/globals';
+import axios from 'axios';
+
+// Mock axios
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+// Mock environment variables
+const originalEnv = process.env;
+beforeEach(() => {
+  jest.resetAllMocks();
+  process.env = { ...originalEnv, OPENAI_API_KEY: 'test-api-key' };
+  
+  // Spy on console methods
+  jest.spyOn(console, 'log').mockImplementation(() => {});
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  process.env = originalEnv;
+});
+
+describe('LLM Service', () => {
+  const mockRequestData: LlmRequestData = {
+    email: 'test@example.com',
+    amount: 5000,
+    ip: '192.168.1.1',
+    deviceFingerprint: 'device123',
+    currentRiskScore: 0.6,
+    currentRiskLevel: 'moderate',
+    currentExplanations: ['High transaction amount', 'Repeated IP usage']
+  };
+  
+  const mockOpenAIResponse = {
+    data: {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              riskAssessment: 'high',
+              riskScore: 0.85,
+              explanation: ['Suspicious email pattern', 'Transaction amount exceeds typical range'],
+              additionalFlags: ['Unusual time of day', 'IP address associated with VPN'],
+              summary: 'This transaction is considered high risk with a score of 0.85 due to: Suspicious email pattern; Transaction amount exceeds typical range'
+            })
+          }
+        }
+      ]
+    }
+  };
+
+  it('should successfully get risk analysis from OpenAI', async () => {
+    mockedAxios.post.mockResolvedValueOnce(mockOpenAIResponse);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      'https://api.openai.com/v1/chat/completions',
+      expect.objectContaining({
+        model: 'gpt-3.5-turbo',
+        messages: expect.arrayContaining([
+          expect.objectContaining({ role: 'system' }),
+          expect.objectContaining({ role: 'user' })
+        ])
+      }),
+      expect.objectContaining({
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-api-key'
+        }
+      })
+    );
+    
+    expect(result).toEqual({
+      riskAssessment: 'high',
+      riskScore: 0.85,
+      explanation: ['Suspicious email pattern', 'Transaction amount exceeds typical range'],
+      additionalFlags: ['Unusual time of day', 'IP address associated with VPN'],
+      summary: 'This transaction is considered high risk with a score of 0.85 due to: Suspicious email pattern; Transaction amount exceeds typical range'
+    });
+  });
+  
+  it('should normalize scores greater than 1.0 to a 0.0-1.0 scale', async () => {
+    const largeScoreResponse = {
+      data: {
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                riskAssessment: 'high',
+                riskScore: 92,
+                explanation: ['Very high risk score'],
+                additionalFlags: ['Score normalization test']
+              })
+            }
+          }
+        ]
+      }
+    };
+    
+    mockedAxios.post.mockResolvedValueOnce(largeScoreResponse);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(result.riskScore).toBeLessThanOrEqual(1.0);
+    expect(result.riskScore).toBeCloseTo(0.92);
+  });
+  
+  it('should generate a summary if not provided by LLM', async () => {
+    const responseWithoutSummary = {
+      data: {
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                riskAssessment: 'moderate',
+                riskScore: 0.6,
+                explanation: ['Moderate risk indicators present'],
+                additionalFlags: ['Some suspicious patterns']
+              })
+            }
+          }
+        ]
+      }
+    };
+    
+    mockedAxios.post.mockResolvedValueOnce(responseWithoutSummary);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(result.summary).toBeDefined();
+    expect(result.summary).toContain('moderate risk');
+    expect(result.summary).toContain('0.6');
+  });
+  
+  it('should return fallback response when API key is missing', async () => {
+    process.env.OPENAI_API_KEY = '';
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(mockedAxios.post).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+  
+  it('should handle API errors gracefully', async () => {
+    const mockError: any = new Error('API Error');
+    mockError.response = {
+      status: 429,
+      statusText: 'Too Many Requests',
+      data: { error: { message: 'Rate limit exceeded' } }
+    };
+    
+    mockedAxios.post.mockRejectedValueOnce(mockError);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(console.error).toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+  
+  it('should handle malformed JSON responses', async () => {
+    const malformedResponse = {
+      data: {
+        choices: [
+          {
+            message: {
+              content: '{invalid-json}'
+            }
+          }
+        ]
+      }
+    };
+    
+    mockedAxios.post.mockResolvedValueOnce(malformedResponse);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(console.error).toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+});
+```
+
+---
+
+**User**
+
+-----------------|---------|----------|---------|---------|----------------------------------------------
+File             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+-----------------|---------|----------|---------|---------|----------------------------------------------
+All files        |   49.51 |       50 |   33.33 |      50 |
+ config          |       0 |        0 |       0 |       0 |
+  config.ts      |       0 |        0 |       0 |       0 | 1-70
+  database.ts    |       0 |        0 |       0 |       0 | 1-33
+ models          |       0 |        0 |       0 |       0 |
+  FraudLog.ts    |       0 |      100 |     100 |       0 | 1-76
+  RiskConfig.ts  |       0 |        0 |       0 |       0 | 1-80
+ routes          |      50 |    58.82 |      40 |      50 |
+  api.ts         |     100 |    76.92 |     100 |     100 | 57
+  config.ts      |       0 |        0 |       0 |       0 | 1-84
+ services        |    68.9 |       60 |   46.66 |   69.67 |
+  llmService.ts  |     100 |    59.25 |     100 |     100 | 102-113,137-160
+  riskService.ts |   57.85 |     60.6 |   33.33 |    58.4 | 86-87,99-100,165-241,263,287,296-310,320-353
+ utils           |   78.57 |     62.5 |     100 |   78.57 |
+  logger.ts      |   78.57 |     62.5 |     100 |   78.57 | 8,41-52  this is code coverage want to add any test cases
+
+---
+
+**Cursor**
+
+Based on the coverage report, let's add test cases to improve coverage. I'll focus on the uncovered lines in llmService.ts (102-113, 137-160):
+
+```typescript
+import { getLlmRiskAnalysis, LlmRequestData, LlmAnalysisResult } from '../../src/services/llmService';
+import { jest, describe, beforeEach, afterEach, it, expect } from '@jest/globals';
+import axios from 'axios';
+
+// Mock axios
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+// Mock environment variables
+const originalEnv = process.env;
+beforeEach(() => {
+  jest.resetAllMocks();
+  process.env = { ...originalEnv, OPENAI_API_KEY: 'test-api-key' };
+  
+  // Spy on console methods
+  jest.spyOn(console, 'log').mockImplementation(() => {});
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  process.env = originalEnv;
+});
+
+describe('LLM Service', () => {
+  const mockRequestData: LlmRequestData = {
+    email: 'test@example.com',
+    amount: 5000,
+    ip: '192.168.1.1',
+    deviceFingerprint: 'device123',
+    currentRiskScore: 0.6,
+    currentRiskLevel: 'moderate',
+    currentExplanations: ['High transaction amount', 'Repeated IP usage']
+  };
+  
+  const mockOpenAIResponse = {
+    data: {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              riskAssessment: 'high',
+              riskScore: 0.85,
+              explanation: ['Suspicious email pattern', 'Transaction amount exceeds typical range'],
+              additionalFlags: ['Unusual time of day', 'IP address associated with VPN'],
+              summary: 'This transaction is considered high risk with a score of 0.85 due to: Suspicious email pattern; Transaction amount exceeds typical range'
+            })
+          }
+        }
+      ]
+    }
+  };
+
+  it('should successfully get risk analysis from OpenAI', async () => {
+    mockedAxios.post.mockResolvedValueOnce(mockOpenAIResponse);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      'https://api.openai.com/v1/chat/completions',
+      expect.objectContaining({
+        model: 'gpt-3.5-turbo',
+        messages: expect.arrayContaining([
+          expect.objectContaining({ role: 'system' }),
+          expect.objectContaining({ role: 'user' })
+        ])
+      }),
+      expect.objectContaining({
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-api-key'
+        }
+      })
+    );
+    
+    expect(result).toEqual({
+      riskAssessment: 'high',
+      riskScore: 0.85,
+      explanation: ['Suspicious email pattern', 'Transaction amount exceeds typical range'],
+      additionalFlags: ['Unusual time of day', 'IP address associated with VPN'],
+      summary: 'This transaction is considered high risk with a score of 0.85 due to: Suspicious email pattern; Transaction amount exceeds typical range'
+    });
+  });
+  
+  it('should normalize scores greater than 1.0 to a 0.0-1.0 scale', async () => {
+    const largeScoreResponse = {
+      data: {
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                riskAssessment: 'high',
+                riskScore: 92,
+                explanation: ['Very high risk score'],
+                additionalFlags: ['Score normalization test']
+              })
+            }
+          }
+        ]
+      }
+    };
+    
+    mockedAxios.post.mockResolvedValueOnce(largeScoreResponse);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(result.riskScore).toBeLessThanOrEqual(1.0);
+    expect(result.riskScore).toBeCloseTo(0.92);
+  });
+  
+  it('should generate a summary if not provided by LLM', async () => {
+    const responseWithoutSummary = {
+      data: {
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                riskAssessment: 'moderate',
+                riskScore: 0.6,
+                explanation: ['Moderate risk indicators present'],
+                additionalFlags: ['Some suspicious patterns']
+              })
+            }
+          }
+        ]
+      }
+    };
+    
+    mockedAxios.post.mockResolvedValueOnce(responseWithoutSummary);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(result.summary).toBeDefined();
+    expect(result.summary).toContain('moderate risk');
+    expect(result.summary).toContain('0.6');
+  });
+  
+  it('should return fallback response when API key is missing', async () => {
+    process.env.OPENAI_API_KEY = '';
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(mockedAxios.post).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+  
+  it('should handle network errors gracefully', async () => {
+    const networkError = new Error('Network Error');
+    mockedAxios.post.mockRejectedValueOnce(networkError);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(console.error).toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+  
+  it('should handle API errors with response data gracefully', async () => {
+    const mockError: any = new Error('API Error');
+    mockError.response = {
+      status: 429,
+      statusText: 'Too Many Requests',
+      data: { error: { message: 'Rate limit exceeded' } }
+    };
+    
+    mockedAxios.post.mockRejectedValueOnce(mockError);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(console.error).toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+  
+  it('should handle API errors without response data gracefully', async () => {
+    const mockError: any = new Error('API Error');
+    // No response property, to test that branch of the error handling
+    
+    mockedAxios.post.mockRejectedValueOnce(mockError);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(console.error).toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+  
+  it('should handle malformed JSON responses', async () => {
+    const malformedResponse = {
+      data: {
+        choices: [
+          {
+            message: {
+              content: '{invalid-json}'
+            }
+          }
+        ]
+      }
+    };
+    
+    mockedAxios.post.mockResolvedValueOnce(malformedResponse);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(console.error).toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+  
+  it('should handle incomplete/missing response fields', async () => {
+    const incompleteResponse = {
+      data: {
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                // Missing riskAssessment and riskScore
+                explanation: [],
+                additionalFlags: []
+              })
+            }
+          }
+        ]
+      }
+    };
+    
+    mockedAxios.post.mockResolvedValueOnce(incompleteResponse);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    // Should use fallback values for missing fields
+    expect(result.riskAssessment).toBe('moderate');
+    expect(result.riskScore).toBe(mockRequestData.currentRiskScore);
+    expect(result.summary).toBeDefined();
+  });
+  
+  it('should handle unexpected response structure', async () => {
+    const unexpectedResponse = {
+      data: {
+        // Missing the choices array
+        status: 'success'
+      }
+    };
+    
+    mockedAxios.post.mockResolvedValueOnce(unexpectedResponse as any);
+    
+    const result = await getLlmRiskAnalysis(mockRequestData);
+    
+    expect(console.error).toHaveBeenCalled();
+    expect(result).toEqual({
+      riskAssessment: 'moderate',
+      riskScore: mockRequestData.currentRiskScore,
+      explanation: mockRequestData.currentExplanations,
+      additionalFlags: ['LLM analysis failed'],
+      summary: expect.stringContaining(mockRequestData.currentRiskLevel)
+    });
+  });
+});
+```
+
+Let me explore the current state of the project to understand what we have now.
+
+Let me first check the README to understand the project:
+
+Now let's check out the AI-Risk-Engine directory to see the project structure:
+
+Let's examine the package.json to understand the dependencies and structure of the project:
+
+Now let's explore the source code directory:
+
+Let's check the services directory, since that might contain the llmService mentioned in the summary:
+
+Let's examine the llmService.ts file that was created as part of the integration:
+
+Now, let's examine the riskService.ts file to see how the LLM integration was implemented:
+
+Let's read the rest of the riskService.ts file:
+
+Let's check the routes directory to understand how the API endpoints are implemented:
+
+Let's check the main API routes:
+
+Now let's check if there are any tests for the LLM service:
+
+Let's examine the tests for the LLM service:
+
+Let's read the rest of the LLM service tests:
+
+Based on the code I've reviewed, I'll now summarize what has been done in the AI Risk Engine project with the LLM integration:
+
+1. **LLM Service Implementation**:
+   - Created a new `llmService.ts` file that handles interactions with OpenAI's API
+   - Implemented robust error handling for API failures, rate limits, and other edge cases
+   - Used the gpt-3.5-turbo model rather than GPT-4 (likely for availability/cost reasons)
+   - Implemented score normalization to ensure consistent 0.0-1.0 scale
+   - Added detailed debug logging for troubleshooting
+
+2. **Risk Evaluation Integration**:
+   - Updated the risk evaluation to blend rule-based and LLM-based scoring (70/30 weighting)
+   - Added new fields to the evaluation result to include LLM-specific insights
+   - Implemented the `llmResponse` field with a summarized risk assessment
+   - Made the LLM integration optional with the `enableLlmAnalysis` flag
+
+3. **Testing**:
+   - Comprehensive test suite for the LLM service
+   - Tests for error handling, score normalization, and various edge cases
+   - Mocked OpenAI API responses for consistent testing
+
+4. **API and Configuration**:
+   - Updated API endpoints to support the LLM integration
+   - Configured environment variables for OpenAI API key management
+   - Added extensive error handling for when LLM analysis fails
+
+5. **Documentation**:
+   - Updated README.md with information about the new LLM integration
+   - Added details on the scoring system change (0-100 to 0.0-1.0 scale)
+   - Added explanation of risk levels (changed terminology from "medium" to "moderate")
+   - Documented how to enable LLM analysis in API requests
+
+The system now offers a more sophisticated risk evaluation by combining traditional rule-based assessment with LLM-powered analysis, providing more comprehensive fraud detection capabilities.
+

@@ -1,6 +1,11 @@
 import { evaluateRisk, TransactionData } from '../../src/services/riskService';
-import RiskConfig, { getDefaultConfig } from '../../src/models/RiskConfig';
+import RiskConfig, { getDefaultConfig, IRiskConfig } from '../../src/models/RiskConfig';
 import FraudLog from '../../src/models/FraudLog';
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+
+// Define mock types
+type MockedGetDefaultConfig = jest.MockedFunction<typeof getDefaultConfig>;
+type MockedFraudLogCreate = jest.MockedFunction<typeof FraudLog.create>;
 
 // Mock the models
 jest.mock('../../src/models/RiskConfig', () => ({
@@ -39,13 +44,13 @@ describe('Risk Service', () => {
       },
       suspiciousIps: ['192.168.1.100'],
       suspiciousDevices: ['device123'],
-      save: jest.fn().mockResolvedValue(true),
-    };
+      save: jest.fn<() => Promise<IRiskConfig>>().mockResolvedValue(true as any),
+    } as unknown as IRiskConfig;
     
     beforeEach(() => {
       // Setup the mock for getDefaultConfig
-      (getDefaultConfig as jest.Mock).mockResolvedValue(mockConfig);
-      (FraudLog.create as jest.Mock).mockResolvedValue({});
+      (getDefaultConfig as MockedGetDefaultConfig).mockResolvedValue(mockConfig);
+      (FraudLog.create as MockedFraudLogCreate).mockResolvedValue({} as any);
     });
     
     it('should return low risk for normal transaction', async () => {
@@ -59,7 +64,7 @@ describe('Risk Service', () => {
       const result = await evaluateRisk(transaction);
       
       expect(result.riskLevel).toBe('low');
-      expect(result.score).toBeLessThan(30);
+      expect(result.score).toBeLessThan(0.3); // Updated for 0.0-1.0 scale
       expect(FraudLog.create).not.toHaveBeenCalled();
     });
     
@@ -74,7 +79,7 @@ describe('Risk Service', () => {
       const result = await evaluateRisk(transaction);
       
       expect(result.riskLevel).not.toBe('low');
-      expect(result.score).toBeGreaterThanOrEqual(50);
+      expect(result.score).toBeGreaterThanOrEqual(0.5); // Updated for 0.0-1.0 scale
       expect(FraudLog.create).toHaveBeenCalled();
       expect(result.explanation.some(msg => msg.includes('fraud.com'))).toBe(true);
     });
@@ -104,7 +109,7 @@ describe('Risk Service', () => {
       const result = await evaluateRisk(transaction);
       
       expect(result.riskLevel).not.toBe('low');
-      expect(result.score).toBeGreaterThanOrEqual(40);
+      expect(result.score).toBeGreaterThanOrEqual(0.4); // Updated for 0.0-1.0 scale
       expect(FraudLog.create).toHaveBeenCalled();
       expect(result.explanation.some(msg => msg.includes('192.168.1.100'))).toBe(true);
     });
@@ -120,7 +125,7 @@ describe('Risk Service', () => {
       const result = await evaluateRisk(transaction);
       
       expect(result.riskLevel).not.toBe('low');
-      expect(result.score).toBeGreaterThanOrEqual(40);
+      expect(result.score).toBeGreaterThanOrEqual(0.4); // Updated for 0.0-1.0 scale
       expect(FraudLog.create).toHaveBeenCalled();
       expect(result.explanation.some(msg => msg.includes('device123'))).toBe(true);
     });
@@ -136,13 +141,13 @@ describe('Risk Service', () => {
       const result = await evaluateRisk(transaction);
       
       expect(result.riskLevel).toBe('high');
-      expect(result.score).toBe(100); // Should be capped at 100
+      expect(result.score).toBe(1.0); // Updated to 1.0 (max score)
       expect(FraudLog.create).toHaveBeenCalled();
       expect(result.explanation.length).toBeGreaterThanOrEqual(3);
     });
     
     it('should handle errors gracefully', async () => {
-      (getDefaultConfig as jest.Mock).mockRejectedValue(new Error('Database error'));
+      (getDefaultConfig as MockedGetDefaultConfig).mockRejectedValue(new Error('Database error'));
       
       const transaction: TransactionData = {
         email: 'user@example.com',

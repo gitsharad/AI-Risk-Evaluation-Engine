@@ -1,7 +1,12 @@
 import request from 'supertest';
 import express from 'express';
 import apiRoutes from '../../src/routes/api';
-import { evaluateRisk, getFraudStats } from '../../src/services/riskService';
+import { evaluateRisk, getFraudStats, RiskEvaluationResult } from '../../src/services/riskService';
+import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+
+// Create proper types for mocked functions
+type MockedEvaluateRisk = jest.MockedFunction<typeof evaluateRisk>;
+type MockedGetFraudStats = jest.MockedFunction<typeof getFraudStats>;
 
 // Mock the risk service
 jest.mock('../../src/services/riskService', () => ({
@@ -27,13 +32,13 @@ describe('API Routes', () => {
   
   describe('POST /api/evaluate-risk', () => {
     it('should evaluate risk for valid transaction data', async () => {
-      const mockResult = {
-        score: 25,
+      const mockResult: RiskEvaluationResult = {
+        score: 0.25,
         riskLevel: 'low',
         explanation: ['No suspicious activity detected'],
       };
       
-      (evaluateRisk as jest.Mock).mockResolvedValue(mockResult);
+      (evaluateRisk as MockedEvaluateRisk).mockResolvedValue(mockResult);
       
       const response = await request(app)
         .post('/api/evaluate-risk')
@@ -52,6 +57,7 @@ describe('API Routes', () => {
         amount: 1000,
         ip: '192.168.1.1',
         deviceFingerprint: 'device123',
+        enableLlmAnalysis: false
       });
     });
     
@@ -101,7 +107,7 @@ describe('API Routes', () => {
     });
     
     it('should handle errors from risk service', async () => {
-      (evaluateRisk as jest.Mock).mockRejectedValue(new Error('Service error'));
+      (evaluateRisk as MockedEvaluateRisk).mockRejectedValue(new Error('Service error'));
       
       const response = await request(app)
         .post('/api/evaluate-risk')
@@ -122,13 +128,13 @@ describe('API Routes', () => {
       const mockStats = {
         totalAttempts: 100,
         byRiskLevel: {
-          low: { count: 50, averageScore: 20 },
-          medium: { count: 30, averageScore: 50 },
-          high: { count: 20, averageScore: 85 },
+          low: { count: 50, averageScore: 0.2 },
+          moderate: { count: 30, averageScore: 0.5 },
+          high: { count: 20, averageScore: 0.85 },
         },
       };
       
-      (getFraudStats as jest.Mock).mockResolvedValue(mockStats);
+      (getFraudStats as MockedGetFraudStats).mockResolvedValue(mockStats);
       
       const response = await request(app).get('/api/fraud-stats');
       
@@ -139,7 +145,7 @@ describe('API Routes', () => {
     });
     
     it('should handle errors from fraud stats service', async () => {
-      (getFraudStats as jest.Mock).mockRejectedValue(new Error('Stats error'));
+      (getFraudStats as MockedGetFraudStats).mockRejectedValue(new Error('Stats error'));
       
       const response = await request(app).get('/api/fraud-stats');
       
