@@ -105,7 +105,7 @@ GET /fraud-stats
 
 Provide a test/ folder with sample test cases and setup.
 
-🔧 Use These Libraries
+ Use These Libraries
 express, mongoose, dotenv, nodemon, uuid, jest or mocha + supertest, ts-node, tsconfig, eslint
 
  Generate the full project with working backend, REST APIs, Docker support, MongoDB integration, and test cases in Cursor IDE.
