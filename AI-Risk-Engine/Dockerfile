@@ -4,7 +4,9 @@ WORKDIR /app
 
 COPY package*.json ./
 
+# Install dependencies including Redis
 RUN npm install
+RUN npm install ioredis @types/ioredis
 
 COPY . .
 

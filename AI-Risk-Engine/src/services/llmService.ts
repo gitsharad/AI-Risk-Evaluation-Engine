@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
 import dotenv from 'dotenv';
+import CacheService from './redisService';
 
 // Load environment variables
 dotenv.config();
@@ -30,6 +31,15 @@ export interface LlmRequestData {
  */
 export const getLlmRiskAnalysis = async (data: LlmRequestData): Promise<LlmAnalysisResult> => {
   try {
+    // Check cache first
+    const cacheKey = CacheService.generateRiskAnalysisKey(data);
+    const cachedResult = await CacheService.get<LlmAnalysisResult>(cacheKey);
+    
+    if (cachedResult) {
+      logger.info('Retrieved risk analysis from cache');
+      return cachedResult;
+    }
+
     // Debug: Log the environment variables
     console.log('DEBUG: Environment variables loaded:', {
       hasOpenAIKey: process.env.OPENAI_API_KEY ? 'Yes (length: ' + process.env.OPENAI_API_KEY.length + ')' : 'No',
@@ -60,7 +70,7 @@ export const getLlmRiskAnalysis = async (data: LlmRequestData): Promise<LlmAnaly
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
-          model: 'gpt-3.5-turbo', // Changed from gpt-4 to gpt-3.5-turbo which is more widely available
+          model: 'gpt-3.5-turbo',
           messages: [
             {
               role: 'system', 
@@ -71,7 +81,7 @@ export const getLlmRiskAnalysis = async (data: LlmRequestData): Promise<LlmAnaly
               content: prompt
             }
           ],
-          temperature: 0.3, // Lower temperature for more focused and deterministic outputs
+          temperature: 0.3,
           response_format: { type: 'json_object' }
         },
         {
@@ -105,14 +115,20 @@ export const getLlmRiskAnalysis = async (data: LlmRequestData): Promise<LlmAnaly
         data
       );
       
-      // Validate and format the response
-      return {
+      // Create the result object
+      const result: LlmAnalysisResult = {
         riskAssessment: parsedResponse.riskAssessment || 'moderate',
         riskScore: normalizedScore || data.currentRiskScore,
         explanation: parsedResponse.explanation || data.currentExplanations,
         additionalFlags: parsedResponse.additionalFlags || [],
         summary: summary
       };
+
+      // Cache the result
+      await CacheService.set(cacheKey, result);
+      logger.info('Cached risk analysis result');
+
+      return result;
     } catch (error: any) {
       console.error('DEBUG: Error during OpenAI API call:', error.message);
       if (error.response) {

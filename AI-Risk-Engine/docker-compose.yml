@@ -12,11 +12,13 @@ services:
       - NODE_ENV=development
       - PORT=6000
       - MONGODB_URI=mongodb://mongodb:27017/ai-risk-engine
+      - REDIS_URL=redis://redis:6379
     volumes:
       - ./src:/app/src
       - ./logs:/app/logs
     depends_on:
       - mongodb
+      - redis
     command: npm run dev
     restart: unless-stopped
 
@@ -29,5 +31,15 @@ services:
       - mongodb_data:/data/db
     restart: unless-stopped
 
+  redis:
+    image: redis:alpine
+    container_name: ai-risk-engine-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
 volumes:
-  mongodb_data: 
+  mongodb_data:
+  redis_data: 
